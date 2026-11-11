@@ -22,7 +22,84 @@ def _formatear_monto(valor):
     return f"${float(valor or 0):,.2f}"
 
 
-def _generar_reporte_html(datos_obras):
+def _generar_tabla_valuaciones(datos_valuaciones):
+    columnas = datos_valuaciones["columnas"]
+    filas = datos_valuaciones["filas"]
+    columna_proyecto = next(
+        (
+            columna
+            for columna in columnas
+            if columna.strip().casefold() == "proyecto"
+        ),
+        None,
+    )
+    if columna_proyecto:
+        filas = [
+            fila
+            for fila in filas
+            if str(fila.get(columna_proyecto) or "").strip()
+        ]
+    if not filas:
+        return '<div class="empty">Sin Valuaciones pendientes</div>'
+
+    columnas_monetarias = {
+        "presupuesto",
+        "anticipo",
+        "monto ejecutado",
+        "valuación por cobrar",
+    }
+    columna_por_cobrar = next(
+        (
+            columna
+            for columna in columnas
+            if columna.strip().casefold() == "valuación por cobrar"
+        ),
+        None,
+    )
+    indice_por_cobrar = (
+        columnas.index(columna_por_cobrar) if columna_por_cobrar else -1
+    )
+    total_por_cobrar = sum(
+        valor
+        for fila in filas
+        if columna_por_cobrar
+        and isinstance((valor := fila.get(columna_por_cobrar)), (int, float))
+    )
+
+    encabezados = "".join(f"<th>{escape(columna)}</th>" for columna in columnas)
+    filas_html = []
+    for fila in filas:
+        celdas = []
+        for columna in columnas:
+            valor = fila.get(columna)
+            nombre_columna = columna.strip().casefold()
+            if isinstance(valor, (int, float)) and nombre_columna in columnas_monetarias:
+                valor = _formatear_monto(valor)
+            elif isinstance(valor, (int, float)) and nombre_columna == "avance":
+                valor = f"{valor * 100:.0f}%"
+            texto = "" if valor is None else str(valor)
+            celdas.append(f"<td>{escape(texto)}</td>")
+        filas_html.append(f"<tr>{''.join(celdas)}</tr>")
+
+    if indice_por_cobrar > 0:
+        total_celdas = [""] * len(columnas)
+        total_celdas[indice_por_cobrar - 1] = "Por cobrar"
+        total_celdas[indice_por_cobrar] = _formatear_monto(total_por_cobrar)
+        filas_html.append(
+            '<tr class="valuation-total">'
+            + "".join(f"<td>{escape(valor)}</td>" for valor in total_celdas)
+            + "</tr>"
+        )
+
+    return f"""<div class="valuations-table-wrap">
+        <table class="valuations-table" aria-label="Valuaciones pendientes por cobrar">
+            <thead><tr>{encabezados}</tr></thead>
+            <tbody>{''.join(filas_html)}</tbody>
+        </table>
+    </div>"""
+
+
+def _generar_reporte_html(datos_obras, datos_valuaciones):
     obras_en_curso = sorted(
         (
             (obra, datos)
@@ -114,6 +191,13 @@ def _generar_reporte_html(datos_obras):
         .metric span, .project-metrics span {{ display: block; color: #59665d; font-size: 11px; font-weight: 600; }}
         .metric strong {{ display: block; margin-top: 5px; color: #176b4d; font-size: 18px; overflow-wrap: anywhere; }}
         .management-summary {{ margin: 12px 0 18px; color: #405047; }}
+        .valuations-table-wrap {{ margin: 0 0 18px; overflow-x: auto; }}
+        .valuations-table {{ width: 100%; border-collapse: collapse; font-size: 10px; text-align: left; }}
+        .valuations-table th, .valuations-table td {{ padding: 7px 8px; border-bottom: 1px solid #e8ede8; vertical-align: top; }}
+        .valuations-table th {{ color: #59665d; background: #f1f6f2; font-size: 9px; text-transform: uppercase; }}
+        .valuations-table th:not(:first-child), .valuations-table td:not(:first-child) {{ white-space: nowrap; }}
+        .valuations-table td:first-child {{ overflow-wrap: anywhere; }}
+        .valuation-total td {{ border-top: 1px solid #cfd9d0; background: #f8faf8; font-weight: 700; }}
         .project {{ margin-top: 12px; padding: 13px; border: 1px solid #dfe6df; border-radius: 5px; break-inside: avoid; page-break-inside: avoid; }}
         .project-heading {{ display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 9px; border-bottom: 1px solid #e8ede8; }}
         .project-kicker {{ margin: 0 0 3px; color: #68756c; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }}
@@ -147,6 +231,9 @@ def _generar_reporte_html(datos_obras):
             .metric span, .project-metrics span {{ font-size: 10.5pt; line-height: 1.3; }}
             .metric strong {{ margin-top: 1.5mm; font-size: 15pt; line-height: 1.25; }}
             .management-summary {{ margin: 4mm 0 6mm; font-size: 11.5pt; line-height: 1.45; }}
+            .valuations-table {{ font-size: 9pt; }}
+            .valuations-table th {{ font-size: 8pt; }}
+            .valuations-table th, .valuations-table td {{ padding: 2mm; }}
             .project {{ margin-top: 4mm; padding: 4mm; }}
             .project-heading {{ padding-bottom: 3mm; }}
             .project-kicker {{ margin-bottom: 1mm; font-size: 9.5pt; }}
@@ -182,6 +269,8 @@ def _generar_reporte_html(datos_obras):
         <div class="metric"><span>Flujo de caja</span><strong>{_formatear_monto(totales['flujo'])}</strong></div>
     </section>
     <p class="management-summary">Las obras activas registran una ejecución acumulada equivalente al {porcentaje_ejecutado:.2f}% del monto contratado y desembolsos por el {porcentaje_desembolsado:.2f}%. El saldo consolidado pendiente por cobrar es de {_formatear_monto(totales['por_cobrar'])}.</p>
+    <h2 class="section-title">Valuaciones pendientes por cobrar</h2>
+    {_generar_tabla_valuaciones(datos_valuaciones)}
     <h2 class="section-title">Detalle gerencial y financiero por obra</h2>
     {''.join(fichas) or '<div class="empty">No hay obras en curso para incluir en este reporte.</div>'}
     <footer class="footer">Fuente: tablero de control de obras de Inversora Macroandes. Los montos corresponden a los valores registrados para cada proyecto activo.</footer>
@@ -750,7 +839,9 @@ def generar_dashboard():
 
     # Crear directorio si no existe y guardar
     RUTA_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    RUTA_REPORTE.write_text(_generar_reporte_html(datos_obras), encoding="utf-8")
+    RUTA_REPORTE.write_text(
+        _generar_reporte_html(datos_obras, valuaciones), encoding="utf-8"
+    )
     with open(RUTA_OUTPUT, "w", encoding="utf-8") as f:
         html_output = html_content.replace(
             'src="src/assets/Logo.svg"', 'src="../src/assets/Logo.svg"'

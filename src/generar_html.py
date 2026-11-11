@@ -324,7 +324,7 @@ def generar_dashboard():
         <div class="main-shell">
             <header class="topbar">
                 <div class="breadcrumbs">Espacio de trabajo <span aria-hidden="true">/</span> <strong>Tablero de obras</strong></div>
-                <div class="topbar-right"><span><i class="fa-regular fa-circle-question"></i> Gerencia de Operaciones</span><div class="avatar" aria-label="Inversora Macroandes">IM</div></div>
+                <div class="topbar-right"><span><i class="fa-solid fa-helmet-safety" aria-hidden="true"></i> Gerencia de Operaciones</span><div class="avatar" aria-label="Inversora Macroandes">GO</div></div>
             </header>
             <main class="content" id="resumen">
                 <section class="page-heading">

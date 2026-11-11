@@ -54,6 +54,9 @@ def _generar_reporte_html(datos_obras):
         porcentaje_cobrado = max(
             0, min(100, float(datos["avance_financiero_pct"] or 0))
         )
+        porcentaje_fisico = max(
+            0, min(100, float(datos.get("avance_fisico_pct", 0) or 0))
+        )
         porcentaje_ejecutado_obra = (
             max(0, min(100, ejecutado / contrato * 100)) if contrato > 0 else 0
         )
@@ -67,6 +70,10 @@ def _generar_reporte_html(datos_obras):
                     <div class="progress-heading"><span>Avance financiero cobrado</span><strong>{porcentaje_cobrado:.2f}%</strong></div>
                     <div class="progress-track"><span style="width:{porcentaje_cobrado}%"></span></div>
                     <p>Ejecutado: {_formatear_monto(ejecutado)} ({porcentaje_ejecutado_obra:.2f}% del contrato).</p>
+                </div>
+                <div class="progress-block">
+                    <div class="progress-heading"><span>Avance físico</span><strong>{porcentaje_fisico:.2f}%</strong></div>
+                    <div class="progress-track"><span style="width:{porcentaje_fisico}%"></span></div>
                 </div>
                 <div class="project-metrics">
                     <div><span>Monto del contrato</span><strong>{_formatear_monto(contrato)}</strong></div>

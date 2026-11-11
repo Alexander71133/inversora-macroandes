@@ -201,10 +201,11 @@ def generar_dashboard():
         button, input, select {{ font: inherit; }}
         .app-layout {{ min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }}
         .sidebar {{ position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 22px 14px 16px; background: #fff; border-right: 1px solid #e6e9ef; }}
-        .brand {{ display: flex; align-items: center; gap: 10px; padding: 0 9px 28px; color: #323338; }}
-        .brand-logo {{ width: 40px; height: 52px; flex: 0 0 auto; object-fit: contain; filter: brightness(0) saturate(100%) invert(27%) sepia(46%) saturate(740%) hue-rotate(111deg) brightness(94%) contrast(91%); }}
-        .brand-name {{ font-size: 15px; font-weight: 750; letter-spacing: -.4px; }}
-        .brand-caption {{ margin-top: 2px; color: #9699a6; font-size: 10px; }}
+        .brand {{ display: flex; align-items: center; gap: 9px; padding: 0 9px 28px; color: #323338; }}
+        .brand-logo {{ width: 56px; height: 74px; flex: 0 0 auto; object-fit: contain; transform: translateY(-8px); filter: brightness(0) saturate(100%) invert(27%) sepia(46%) saturate(740%) hue-rotate(111deg) brightness(94%) contrast(91%); }}
+        .brand-copy {{ min-width: 0; }}
+        .brand-name {{ font-size: 15px; line-height: 1.2; font-weight: 750; letter-spacing: -.3px; }}
+        .brand-caption {{ margin-top: 4px; color: #9699a6; font-size: 10px; line-height: 1.3; }}
         .workspace-label {{ padding: 0 10px 8px; color: #9699a6; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }}
         .nav-item {{ min-height: 39px; display: flex; align-items: center; gap: 11px; padding: 0 11px; border-radius: 6px; color: #676879; text-decoration: none; font-size: 12px; }}
         .nav-item.active {{ color: #4b4bd8; background: #f0f0ff; font-weight: 650; }}
@@ -311,7 +312,7 @@ def generar_dashboard():
 <body>
     <div class="app-layout">
         <aside class="sidebar" aria-label="Navegación principal">
-            <div class="brand"><img class="brand-logo" src="src/assets/Logo.svg" alt="Logo de Inversora Macroandes"><div><div class="brand-name">Inversora Macroandes</div><div class="brand-caption">Gestión de proyectos</div></div></div>
+            <div class="brand"><img class="brand-logo" src="src/assets/Logo.svg" alt="Logo de Inversora Macroandes"><div class="brand-copy"><div class="brand-name">Inversora Macroandes</div><div class="brand-caption">Gestión de proyectos</div></div></div>
             <div class="workspace-label">Espacio de trabajo</div>
             <nav aria-label="Secciones del tablero">
                 <a class="nav-item" href="#resumen"><i class="fa-solid fa-house"></i> Inicio</a>
@@ -388,6 +389,11 @@ def generar_dashboard():
     <script>
         const datosProyectos = {datos_json};
         const datosTransacciones = {transacciones_json};
+        const ordenProyectos = new Map(
+            Object.keys(datosProyectos)
+                .filter((obra) => obra !== 'CONSOLIDADO OBRAS')
+                .map((obra, indice) => [obra.trim().toLocaleLowerCase('es'), indice])
+        );
         const estadoSelector = {{ vista: 'TODAS' }};
         const busquedaObras = document.getElementById('project-search');
         const filasObras = document.getElementById('project-rows');
@@ -422,6 +428,13 @@ def generar_dashboard():
                 const coincideEstado = estadoTransacciones.vista === 'TODAS'
                     || datos.estado === estadoTransacciones.vista;
                 return coincideEstado && (!consulta || texto.includes(consulta));
+            }}).sort((a, b) => {{
+                const ordenA = ordenProyectos.get(a.obra.trim().toLocaleLowerCase('es'));
+                const ordenB = ordenProyectos.get(b.obra.trim().toLocaleLowerCase('es'));
+                if (ordenA !== undefined && ordenB !== undefined) return ordenA - ordenB;
+                if (ordenA !== undefined) return -1;
+                if (ordenB !== undefined) return 1;
+                return a.obra.localeCompare(b.obra, 'es', {{ sensitivity: 'base' }});
             }});
 
             document.getElementById('transaction-count').textContent = obras.length;

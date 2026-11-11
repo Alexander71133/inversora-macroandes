@@ -58,12 +58,13 @@
         .board-search:focus { border-color: #8585ff; box-shadow: 0 0 0 2px #f0f0ff; }
         .table-scroll { overflow-x: auto; }
         .project-table { width: 100%; min-width: 1040px; border-collapse: collapse; text-align: left; }
-        .transaction-table { width: 100%; min-width: 930px; table-layout: fixed; border-collapse: collapse; text-align: left; }
-        .transaction-table th, .transaction-table td { width: 20%; }
+        .transaction-table { width: 100%; min-width: 930px; border-collapse: collapse; text-align: left; }
         .project-table th { height: 36px; padding: 0 12px; border-top: 1px solid #eceef2; border-bottom: 1px solid #eceef2; color: #9699a6; background: #fbfbfc; font-size: 9px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
         .project-table td { height: 53px; padding: 8px 12px; border-bottom: 1px solid #f0f1f4; color: #454650; font-size: 10px; white-space: nowrap; }
         .transaction-table th { height: 36px; padding: 0 12px; border-top: 1px solid #eceef2; border-bottom: 1px solid #eceef2; color: #9699a6; background: #fbfbfc; font-size: 9px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
-        .transaction-table td { padding: 10px 12px; border-bottom: 1px solid #f0f1f4; color: #454650; font-size: 10px; }
+        .transaction-table td { height: 53px; padding: 10px 12px; border-bottom: 1px solid #f0f1f4; color: #454650; font-size: 10px; }
+        .transaction-table td:not(:first-child) { white-space: nowrap; }
+        .transaction-table td:first-child .project-name { max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; }
         .transaction-table tbody tr:hover { background: #fbfbff; }
         .transaction-table tbody tr:last-child td { border-bottom: 0; }
         .transaction-total { font-weight: 700; white-space: nowrap; }

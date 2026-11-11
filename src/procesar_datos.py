@@ -2,6 +2,7 @@
 Módulo de Procesamiento de Datos Financieros
 Extrae, limpia y mapea la información del libro Excel hacia la estructura del Dashboard.
 """
+from datetime import date, datetime
 from pathlib import Path
 import re
 import shutil
@@ -383,6 +384,44 @@ def obtener_datos_obras():
         }
 
     return proyectos
+
+
+def obtener_datos_valuaciones():
+    """Lee la hoja Valuaciones y conserva sus columnas y valores originales."""
+    usar_control_obras = RUTA_CONTROL_OBRAS.is_file()
+    ruta_excel = RUTA_CONTROL_OBRAS if usar_control_obras else RUTA_EXCEL
+
+    if not ruta_excel.is_file():
+        raise FileNotFoundError(f"No se encontró el archivo Excel en: {ruta_excel}")
+
+    hojas = pd.ExcelFile(ruta_excel).sheet_names
+    if "Valuaciones" not in hojas:
+        if usar_control_obras:
+            raise ValueError(
+                f"No se encontró la hoja 'Valuaciones' en: {ruta_excel}"
+            )
+        print(
+            "AVISO: el Excel de respaldo no contiene la hoja 'Valuaciones'; "
+            "la tabla se generará sin registros."
+        )
+        return {"columnas": [], "filas": []}
+
+    df = pd.read_excel(ruta_excel, sheet_name="Valuaciones")
+    columnas = [str(columna) for columna in df.columns]
+    filas = []
+    for _, fila in df.iterrows():
+        datos_fila = {}
+        for columna, valor in fila.items():
+            if pd.isna(valor):
+                valor = None
+            elif isinstance(valor, (datetime, date)):
+                valor = valor.isoformat()
+            elif hasattr(valor, "item"):
+                valor = valor.item()
+            datos_fila[str(columna)] = valor
+        filas.append(datos_fila)
+
+    return {"columnas": columnas, "filas": filas}
 
 
 def obtener_datos_transacciones(estados_obras=None):

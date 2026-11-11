@@ -6,7 +6,11 @@ from datetime import datetime
 from html import escape
 import json
 from pathlib import Path
-from procesar_datos import obtener_datos_obras, obtener_datos_transacciones
+from procesar_datos import (
+    obtener_datos_obras,
+    obtener_datos_transacciones,
+    obtener_datos_valuaciones,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 RUTA_OUTPUT = BASE_DIR / "output" / "dashboard_obras.html"
@@ -190,6 +194,8 @@ def generar_dashboard():
     datos_json = json.dumps(datos_obras, ensure_ascii=False)
     transacciones = obtener_datos_transacciones(datos_obras)
     transacciones_json = json.dumps(transacciones, ensure_ascii=False)
+    valuaciones = obtener_datos_valuaciones()
+    valuaciones_json = json.dumps(valuaciones, ensure_ascii=False)
     ruta_base_archivos = ""
 
     html_content = f"""<!DOCTYPE html>
@@ -262,6 +268,8 @@ def generar_dashboard():
         .transaction-table td:first-child .project-name {{ max-width: none; overflow: visible; text-overflow: clip; white-space: nowrap; }}
         .transaction-table tbody tr:hover {{ background: #fbfbff; }}
         .transaction-table tbody tr:last-child td {{ border-bottom: 0; }}
+        .valuation-total td {{ border-top: 1px solid #eceef2; background: #fbfbfc; font-weight: 700; }}
+        .valuation-empty-card {{ margin: 0 19px 18px; padding: 24px; border: 1px solid #e6e9ef; border-radius: 5px; color: #676879; background: #fbfbfc; font-size: 12px; font-weight: 650; text-align: center; }}
         .transaction-total {{ font-weight: 700; white-space: nowrap; }}
         .transaction-total.positive {{ color: #147d52; }}
         .transaction-total.negative {{ color: #c2414b; }}
@@ -324,8 +332,9 @@ def generar_dashboard():
             <nav aria-label="Secciones del tablero">
                 <a class="nav-item" href="#resumen"><i class="fa-solid fa-house"></i> Inicio</a>
                 <a class="nav-item active" href="#tablero"><i class="fa-solid fa-table-cells-large"></i> Tablero de obras</a>
-                <a class="nav-item" href="#conciliacion"><i class="fa-solid fa-chart-column"></i> Finanzas</a>
                 <a class="nav-item" href="#registro-transacciones"><i class="fa-solid fa-money-bill-transfer"></i> Registro de Transacciones</a>
+                <a class="nav-item" href="#valuaciones-pendientes"><i class="fa-solid fa-file-invoice"></i> Valuaciones Pendientes</a>
+                <a class="nav-item" href="#conciliacion"><i class="fa-solid fa-chart-column"></i> Gráfico Flujo de Caja</a>
             </nav>
             <div class="sidebar-footer">Inversora  Macroandes<br>Dpto. de Sistemas</div>
         </aside>
@@ -382,6 +391,17 @@ def generar_dashboard():
                         </table>
                     </div>
                 </section>
+                <section id="valuaciones-pendientes" class="board-card transactions-card" aria-label="Valuaciones pendientes">
+                    <div class="board-head"><div><h2 class="board-title">Valuaciones Pendientes <span class="board-count" id="valuations-count">0</span></h2><p class="board-description">Datos registrados en la hoja Valuaciones.</p></div></div>
+                    <div class="table-scroll" id="valuations-table-container">
+                        <table class="transaction-table">
+                            <thead><tr id="valuations-headers"></tr></thead>
+                            <tbody id="valuations-rows"></tbody>
+                            <tfoot id="valuations-footer"></tfoot>
+                        </table>
+                    </div>
+                    <article id="valuations-empty-card" class="valuation-empty-card" role="status" hidden>Sin Valuaciones pendientes</article>
+                </section>
                 <section class="detail-card" id="conciliacion" aria-label="Conciliación financiera">
                     <div class="detail-heading"><div><h2>Conciliación de flujo de caja</h2><p id="chart-project-name">Detalle del proyecto seleccionado</p></div><span class="detail-caption">USD</span></div>
                     <div id="waterfallChart"></div>
@@ -396,6 +416,7 @@ def generar_dashboard():
     <script>
         const datosProyectos = {datos_json};
         const datosTransacciones = {transacciones_json};
+        const datosValuaciones = {valuaciones_json};
         const ordenProyectos = new Map(
             Object.keys(datosProyectos)
                 .filter((obra) => obra !== 'CONSOLIDADO OBRAS')
@@ -469,6 +490,65 @@ def generar_dashboard():
                     mostrarArchivos(obra, datos.facturas, 'Facturas de compra');
                 }});
             }});
+        }}
+
+        function renderizarValuaciones() {{
+            const columnas = datosValuaciones.columnas;
+            const filas = datosValuaciones.filas;
+            const columnasMonetarias = new Set([
+                'presupuesto',
+                'anticipo',
+                'monto ejecutado',
+                'valuación por cobrar',
+            ]);
+            const columnaProyecto = columnas.find(
+                (columna) => columna.trim().toLocaleLowerCase('es') === 'proyecto'
+            );
+            const filasDetalle = columnaProyecto
+                ? filas.filter((fila) => String(fila[columnaProyecto] ?? '').trim())
+                : filas;
+            const columnaPorCobrar = columnas.find(
+                (columna) => columna.trim().toLocaleLowerCase('es') === 'valuación por cobrar'
+            );
+            const indicePorCobrar = columnas.indexOf(columnaPorCobrar);
+            const totalPorCobrar = columnaPorCobrar
+                ? filasDetalle.reduce((total, fila) => {{
+                    const valor = fila[columnaPorCobrar];
+                    return total + (typeof valor === 'number' && Number.isFinite(valor) ? valor : 0);
+                }}, 0)
+                : 0;
+            const hayValuaciones = filasDetalle.length > 0;
+            document.getElementById('valuations-table-container').hidden = !hayValuaciones;
+            document.getElementById('valuations-empty-card').hidden = hayValuaciones;
+            document.getElementById('valuations-count').textContent = filasDetalle.length;
+            document.getElementById('valuations-headers').innerHTML = columnas
+                .map((columna) => `<th>${{escaparHTML(columna)}}</th>`)
+                .join('');
+            document.getElementById('valuations-rows').innerHTML = filasDetalle
+                .map((fila) => `<tr>${{columnas.map((columna) => {{
+                    const valor = fila[columna];
+                    const nombreColumna = columna.trim().toLocaleLowerCase('es');
+                    const valorNumerico = typeof valor === 'number' && Number.isFinite(valor);
+                    let valorMostrado = valor;
+                    if (valorNumerico && columnasMonetarias.has(nombreColumna)) {{
+                        const montoFormateado = valor.toLocaleString('en-US', {{
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        }});
+                        valorMostrado = `$${{montoFormateado}}`;
+                    }} else if (valorNumerico && nombreColumna === 'avance') {{
+                        valorMostrado = `${{(valor * 100).toFixed(0)}}%`;
+                    }}
+                    return `<td>${{escaparHTML(valorMostrado == null ? '' : valorMostrado)}}</td>`;
+                }}).join('')}}</tr>`)
+                .join('') || `<tr><td class="empty-row" colspan="${{Math.max(columnas.length, 1)}}">No hay valuaciones para mostrar.</td></tr>`;
+            document.getElementById('valuations-footer').innerHTML = indicePorCobrar > 0
+                ? `<tr class="valuation-total">${{columnas.map((_, indice) => {{
+                    if (indice === indicePorCobrar - 1) return '<td>Por cobrar</td>';
+                    if (indice === indicePorCobrar) return `<td>${{formatearUSD(totalPorCobrar)}}</td>`;
+                    return '<td></td>';
+                }}).join('')}}</tr>`
+                : '';
         }}
 
         function mostrarArchivos(obra, archivos, tipo) {{
@@ -661,6 +741,7 @@ def generar_dashboard():
             }});
             renderizarTablero();
             renderizarTransacciones();
+            renderizarValuaciones();
         }});
     </script>
 </body>

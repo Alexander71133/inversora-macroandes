@@ -249,6 +249,7 @@ def obtener_datos_obras():
             "egresos": None,
             "por_cobrar": None,
             "avance_cobrado": None,
+            "avance_fisico": _buscar_columna(df.columns, ("% Avance Fisico",)),
             "archivos": _buscar_columna(df.columns, ("Archivos",)),
         }
     else:
@@ -266,6 +267,7 @@ def obtener_datos_obras():
             "egresos": _buscar_columna(df.columns, ("Egresos Reales", "Egresos")),
             "por_cobrar": _buscar_columna(df.columns, ("Por cobrar",)),
             "avance_cobrado": _buscar_columna(df.columns, ("% Avance Cobrado",)),
+            "avance_fisico": _buscar_columna(df.columns, ("% Avance Fisico",)),
             "archivos": _buscar_columna(df.columns, ("Archivos",)),
         }
 
@@ -323,6 +325,18 @@ def obtener_datos_obras():
         else:
             avance_financiero_pct = (cobrado / monto_contrato * 100) if monto_contrato > 0 else 0.0
 
+        val_avance_fisico = (
+            row.get(columnas["avance_fisico"])
+            if columnas["avance_fisico"]
+            else None
+        )
+        if val_avance_fisico is not None and not pd.isna(val_avance_fisico):
+            avance_fisico_pct = float(val_avance_fisico)
+            if avance_fisico_pct <= 1.0:
+                avance_fisico_pct *= 100
+        else:
+            avance_fisico_pct = 0.0
+
         fecha_cierre = None
         if estado == "CULMINADA" and nombre_obra.upper() == "FATIMA":
             fecha_cierre = "2026-09-15"
@@ -334,6 +348,7 @@ def obtener_datos_obras():
             "egresos_reales": egresos,
             "por_cobrar": por_cobrar,
             "avance_financiero_pct": round(avance_financiero_pct, 2),
+            "avance_fisico_pct": round(avance_fisico_pct, 2),
             "flujo_caja": flujo_caja,
             "estado": estado,
             "estado_fuente": estado_fuente,
@@ -359,6 +374,7 @@ def obtener_datos_obras():
             "avance_financiero_pct": round(cobrado / monto_contrato * 100, 2)
             if monto_contrato > 0
             else 0.0,
+            "avance_fisico_pct": 0.0,
             "flujo_caja": flujo_caja,
             "estado": "CONSOLIDADO",
             "estado_fuente": "Consolidado",

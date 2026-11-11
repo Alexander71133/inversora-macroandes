@@ -352,7 +352,7 @@ def generar_dashboard():
                     </div>
                     <div class="table-scroll">
                         <table class="project-table">
-                            <thead><tr><th>Proyecto</th><th>Estado</th><th>Monto contrato</th><th>Ejecutado</th><th>Desembolsado</th><th>Por cobrar</th><th>Avance financiero</th><th>Flujo de caja</th><th>Archivos</th></tr></thead>
+                            <thead><tr><th>Proyecto</th><th>Estado</th><th>Monto contrato</th><th>Ejecutado</th><th>Desembolsado</th><th>Por cobrar</th><th>Avance fisico</th><th>Avance financiero</th><th>Flujo de caja</th><th>Archivos</th></tr></thead>
                             <tbody id="project-rows"></tbody>
                         </table>
                     </div>
@@ -547,6 +547,7 @@ def generar_dashboard():
             document.getElementById('project-count').textContent = proyectos.length;
             filasObras.innerHTML = proyectos.map(([obra, data]) => {{
                 const avance = Math.max(0, Math.min(100, Number(data.avance_financiero_pct) || 0));
+                const avanceFisico = Math.max(0, Math.min(100, Number(data.avance_fisico_pct) || 0));
                 const culminada = data.estado === 'CULMINADA';
                 const selected = proyectoSeleccionado === obra;
                 const detalle = culminada && data.fecha_cierre
@@ -559,13 +560,14 @@ def generar_dashboard():
                     <td>${{formatearUSD(data.estimado_ejecutado)}}</td>
                     <td>${{formatearUSD(data.cobrado_desembolsado)}}</td>
                     <td>${{formatearUSD(data.por_cobrar)}}</td>
+                    <td><div style="display:flex;align-items:center"><div class="table-progress"><span style="width:${{avanceFisico}}%"></span></div><span class="progress-value">${{avanceFisico.toFixed(1)}}%</span></div></td>
                     <td><div style="display:flex;align-items:center"><div class="table-progress"><span style="width:${{avance}}%"></span></div><span class="progress-value">${{avance.toFixed(1)}}%</span></div></td>
                     <td>${{formatearUSD(data.flujo_caja)}}</td>
                     <td>${{data.archivos.length
                         ? `<button class="files-button" type="button" data-files-project="${{escaparHTML(obra)}}" aria-label="Ver archivos de ${{escaparHTML(obra)}}"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Ver ${{data.archivos.length}}</button>`
                         : '<span class="files-empty">Sin archivos</span>'}}</td>
                 </tr>`;
-            }}).join('') || '<tr><td class="empty-row" colspan="9">No hay proyectos que coincidan con esta vista.</td></tr>';
+            }}).join('') || '<tr><td class="empty-row" colspan="10">No hay proyectos que coincidan con esta vista.</td></tr>';
 
             filasObras.querySelectorAll('[data-project]').forEach((fila) => {{
                 fila.addEventListener('click', () => {{

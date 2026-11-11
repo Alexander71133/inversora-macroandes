@@ -246,6 +246,7 @@ def generar_dashboard():
         .table-scroll {{ overflow-x: auto; }}
         .project-table {{ width: 100%; min-width: 1040px; border-collapse: collapse; text-align: left; }}
         .transaction-table {{ width: 100%; min-width: 930px; table-layout: fixed; border-collapse: collapse; text-align: left; }}
+        .transaction-table th, .transaction-table td {{ width: 20%; }}
         .project-table th {{ height: 36px; padding: 0 12px; border-top: 1px solid #eceef2; border-bottom: 1px solid #eceef2; color: #9699a6; background: #fbfbfc; font-size: 9px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }}
         .project-table td {{ height: 53px; padding: 8px 12px; border-bottom: 1px solid #f0f1f4; color: #454650; font-size: 10px; white-space: nowrap; }}
         .transaction-table th {{ height: 36px; padding: 0 12px; border-top: 1px solid #eceef2; border-bottom: 1px solid #eceef2; color: #9699a6; background: #fbfbfc; font-size: 9px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }}

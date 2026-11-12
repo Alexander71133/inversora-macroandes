@@ -168,7 +168,7 @@
                     </div>
                     <div class="table-scroll">
                         <table class="project-table">
-                            <thead><tr><th>Proyecto</th><th>Estado</th><th>Monto contrato</th><th>Ejecutado</th><th>Desembolsado</th><th>Por cobrar</th><th>Avance fisico</th><th>Avance financiero</th><th>Flujo de caja</th><th>Archivos</th></tr></thead>
+                            <thead><tr><th>Proyecto</th><th>Estado</th><th>Avance fisico</th><th>Monto contrato</th><th>Desembolsado</th><th>Ejecutado</th><th>Flujo de caja</th><th>Por cobrar</th><th>Avance financiero</th><th>Archivos</th></tr></thead>
                             <tbody id="project-rows"></tbody>
                         </table>
                     </div>
@@ -443,13 +443,13 @@
                 return `<tr class="${selected ? 'selected' : ''}" data-project="${escaparHTML(obra)}">
                     <td><div class="project-name">${escaparHTML(obra)}</div><div class="project-subname">${detalle}</div></td>
                     <td><span class="status-pill ${culminada ? 'completed' : ''}">${escaparHTML(data.estado_fuente)}</span></td>
-                    <td>${formatearUSD(data.monto_contrato)}</td>
-                    <td>${formatearUSD(data.estimado_ejecutado)}</td>
-                    <td>${formatearUSD(data.cobrado_desembolsado)}</td>
-                    <td>${formatearUSD(data.por_cobrar)}</td>
                     <td><div style="display:flex;align-items:center"><div class="table-progress"><span style="width:${avanceFisico}%"></span></div><span class="progress-value">${avanceFisico.toFixed(1)}%</span></div></td>
-                    <td><div style="display:flex;align-items:center"><div class="table-progress"><span style="width:${avance}%"></span></div><span class="progress-value">${avance.toFixed(1)}%</span></div></td>
+                    <td>${formatearUSD(data.monto_contrato)}</td>
+                    <td>${formatearUSD(data.cobrado_desembolsado)}</td>
+                    <td>${formatearUSD(data.estimado_ejecutado)}</td>
                     <td>${formatearUSD(data.flujo_caja)}</td>
+                    <td>${formatearUSD(data.por_cobrar)}</td>
+                    <td><div style="display:flex;align-items:center"><div class="table-progress"><span style="width:${avance}%"></span></div><span class="progress-value">${avance.toFixed(1)}%</span></div></td>
                     <td>${data.archivos.length
                         ? `<button class="files-button" type="button" data-files-project="${escaparHTML(obra)}" aria-label="Ver archivos de ${escaparHTML(obra)}"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Ver ${data.archivos.length}</button>`
                         : '<span class="files-empty">Sin archivos</span>'}</td>

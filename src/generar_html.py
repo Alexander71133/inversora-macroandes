@@ -351,6 +351,7 @@ def generar_dashboard():
         .transaction-table {{ width: 100%; min-width: 930px; border-collapse: collapse; text-align: left; }}
         .project-table th {{ height: 36px; padding: 0 12px; border-top: 1px solid #eceef2; border-bottom: 1px solid #eceef2; color: #9699a6; background: #fbfbfc; font-size: 9px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }}
         .project-table td {{ height: 53px; padding: 8px 12px; border-bottom: 1px solid #f0f1f4; color: #454650; font-size: 10px; white-space: nowrap; }}
+        .project-table td.negative {{ color: #c2414b; }}
         .transaction-table th {{ height: 36px; padding: 0 12px; border-top: 1px solid #eceef2; border-bottom: 1px solid #eceef2; color: #9699a6; background: #fbfbfc; font-size: 9px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }}
         .transaction-table td {{ height: 53px; padding: 10px 12px; border-bottom: 1px solid #f0f1f4; color: #454650; font-size: 10px; }}
         .transaction-table td:not(:first-child) {{ white-space: nowrap; }}
@@ -524,6 +525,10 @@ def generar_dashboard():
 
         function formatearUSD(valor) {{
             return new Intl.NumberFormat('en-US', {{ style: 'currency', currency: 'USD', minimumFractionDigits: 2 }}).format(valor);
+        }}
+
+        function claseMonto(valor) {{
+            return Number(valor) < 0 ? 'negative' : '';
         }}
 
         function formatearFecha(fecha) {{
@@ -733,11 +738,11 @@ def generar_dashboard():
                     <td><div class="project-name">${{escaparHTML(obra)}}</div><div class="project-subname">${{detalle}}</div></td>
                     <td><span class="status-pill ${{culminada ? 'completed' : ''}}">${{escaparHTML(data.estado_fuente)}}</span></td>
                     <td><div style="display:flex;align-items:center"><div class="table-progress"><span style="width:${{avanceFisico}}%"></span></div><span class="progress-value">${{avanceFisico.toFixed(1)}}%</span></div></td>
-                    <td>${{formatearUSD(data.monto_contrato)}}</td>
-                    <td>${{formatearUSD(data.cobrado_desembolsado)}}</td>
-                    <td>${{formatearUSD(data.estimado_ejecutado)}}</td>
-                    <td>${{formatearUSD(data.flujo_caja)}}</td>
-                    <td>${{formatearUSD(data.por_cobrar)}}</td>
+                    <td class="${{claseMonto(data.monto_contrato)}}">${{formatearUSD(data.monto_contrato)}}</td>
+                    <td class="${{claseMonto(data.cobrado_desembolsado)}}">${{formatearUSD(data.cobrado_desembolsado)}}</td>
+                    <td class="${{claseMonto(data.estimado_ejecutado)}}">${{formatearUSD(data.estimado_ejecutado)}}</td>
+                    <td class="${{claseMonto(data.flujo_caja)}}">${{formatearUSD(data.flujo_caja)}}</td>
+                    <td class="${{claseMonto(data.por_cobrar)}}">${{formatearUSD(data.por_cobrar)}}</td>
                     <td><div style="display:flex;align-items:center"><div class="table-progress"><span style="width:${{avance}}%"></span></div><span class="progress-value">${{avance.toFixed(1)}}%</span></div></td>
                     <td>${{data.archivos.length
                         ? `<button class="files-button" type="button" data-files-project="${{escaparHTML(obra)}}" aria-label="Ver archivos de ${{escaparHTML(obra)}}"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> Ver ${{data.archivos.length}}</button>`

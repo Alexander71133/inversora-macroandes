@@ -141,6 +141,46 @@ def _generar_reporte_html(datos_obras, datos_valuaciones):
         porcentaje_ejecutado_obra = (
             max(0, min(100, ejecutado / contrato * 100)) if contrato > 0 else 0
         )
+        flujo_caja = round(float(datos.get("flujo_caja", 0) or 0), 2)
+        por_cobrar = round(float(datos.get("por_cobrar", 0) or 0), 2)
+        proyeccion_cierre = round(flujo_caja + por_cobrar, 2)
+        monto_proyeccion = _formatear_monto(abs(proyeccion_cierre))
+        proyeccion_formateada = (
+            f"(-{monto_proyeccion})"
+            if proyeccion_cierre < 0
+            else f"({monto_proyeccion})"
+        )
+        if flujo_caja < 0 and proyeccion_cierre > 0:
+            detalle_proyeccion = (
+                f"Al ingresar los {_formatear_monto(por_cobrar)} pendientes, "
+                f"se cubren los {_formatear_monto(abs(flujo_caja))} que tienes "
+                "en negativo y quedará esa ganancia libre."
+            )
+        elif flujo_caja < 0 and proyeccion_cierre == 0:
+            detalle_proyeccion = (
+                f"Al ingresar los {_formatear_monto(por_cobrar)} pendientes, "
+                f"se cubre exactamente el saldo negativo de "
+                f"{_formatear_monto(abs(flujo_caja))} y el cierre quedaría "
+                "en equilibrio."
+            )
+        elif flujo_caja < 0:
+            detalle_proyeccion = (
+                f"Al ingresar los {_formatear_monto(por_cobrar)} pendientes, "
+                f"se reduce el saldo negativo de {_formatear_monto(abs(flujo_caja))} "
+                f"y quedarían {_formatear_monto(abs(proyeccion_cierre))} "
+                "por cubrir."
+            )
+        elif flujo_caja > 0:
+            detalle_proyeccion = (
+                f"Al ingresar los {_formatear_monto(por_cobrar)} pendientes, "
+                f"se suman al flujo positivo actual de {_formatear_monto(flujo_caja)} "
+                "y quedaría esa ganancia libre."
+            )
+        else:
+            detalle_proyeccion = (
+                f"Al ingresar los {_formatear_monto(por_cobrar)} pendientes, "
+                "quedaría esa ganancia libre."
+            )
         fichas.append(
             f"""<article class="project">
                 <header class="project-heading">
@@ -164,6 +204,7 @@ def _generar_reporte_html(datos_obras, datos_valuaciones):
                     <div><span>Flujo de caja</span><strong>{_formatear_monto(datos['flujo_caja'])}</strong></div>
                     <div><span>Estado</span><strong>En Curso</strong></div>
                 </div>
+                <p class="projection"><strong>Proyección de cierre: {proyeccion_formateada}.</strong> {detalle_proyeccion}</p>
             </article>"""
         )
 
@@ -211,6 +252,7 @@ def _generar_reporte_html(datos_obras, datos_valuaciones):
         .project-metrics {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }}
         .project-metrics > div {{ padding: 8px; background: #f8faf8; }}
         .project-metrics strong {{ display: block; margin-top: 3px; color: #29372d; font-size: 13px; overflow-wrap: anywhere; }}
+        .projection {{ margin: 11px 0 0; padding: 10px 12px; border-left: 3px solid #176b4d; color: #405047; background: #f1f6f2; font-size: 12px; }}
         .empty {{ padding: 20px; border: 1px dashed #cfd9d0; color: #66736a; text-align: center; }}
         .footer {{ margin-top: 20px; padding-top: 9px; border-top: 1px solid #dfe6df; color: #68756c; font-size: 10px; }}
         @page {{ size: portrait; margin: 15mm; }}
@@ -247,6 +289,7 @@ def _generar_reporte_html(datos_obras, datos_valuaciones):
             .project-metrics {{ gap: 2mm; }}
             .project-metrics > div {{ padding: 2.5mm; }}
             .project-metrics strong {{ margin-top: 1mm; font-size: 12pt; line-height: 1.3; }}
+            .projection {{ margin-top: 3mm; padding: 2.5mm 3mm; font-size: 10.5pt; line-height: 1.4; }}
             .footer {{ margin-top: 6mm; padding-top: 2.5mm; font-size: 10pt; line-height: 1.4; }}
             .progress-track span {{ border-top-color: #4a9b70; }}
         }}

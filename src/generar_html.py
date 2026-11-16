@@ -286,6 +286,7 @@ def generar_dashboard():
     valuaciones = obtener_datos_valuaciones()
     valuaciones_json = json.dumps(valuaciones, ensure_ascii=False)
     ruta_base_archivos = ""
+    fecha_actualizacion = datetime.now().strftime("%d/%m/%Y %H:%M")
 
     html_content = f"""<!DOCTYPE html>
 <html lang="es">
@@ -435,7 +436,7 @@ def generar_dashboard():
             </header>
             <main class="content" id="resumen">
                 <section class="page-heading">
-                    <div><p class="eyebrow">Inversora Macroandes · Seguimiento financiero</p><h1>Control de obras</h1><p class="subtitle">(Actualización 15/11/2026)</p></div>
+                    <div><p class="eyebrow">Inversora Macroandes · Seguimiento financiero</p><h1>Control de obras</h1><p class="subtitle">(Actualización {fecha_actualizacion})</p></div>
                     <a class="report-button" id="generate-report" href="reporte_obras.html" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Generar reporte PDF</a>
                 </section>
                 <section class="kpi-grid" aria-label="Indicadores financieros de los proyectos filtrados">

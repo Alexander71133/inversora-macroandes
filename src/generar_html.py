@@ -488,6 +488,7 @@ def generar_dashboard():
                     <article class="kpi-card"><div class="kpi-label"><span class="kpi-icon"><i class="fa-solid fa-money-bill-transfer"></i></span>Desembolsado</div><div class="kpi-value" id="kpi-cobrado">$0,00</div><div class="kpi-note">Total recaudado efectivamente</div></article>
                     <article class="kpi-card"><div class="kpi-label"><span class="kpi-icon"><i class="fa-solid fa-arrow-trend-up"></i></span>Flujo de caja</div><div class="kpi-value" id="kpi-flujo-caja">$0,00</div><div class="kpi-note">Desembolsado menos ejecutado</div></article>
                     <article class="kpi-card"><div class="kpi-label"><span class="kpi-icon"><i class="fa-solid fa-hourglass-half"></i></span>Por cobrar</div><div class="kpi-value" id="kpi-por-cobrar">$0,00</div><div class="kpi-note">Saldo pendiente por cobrar</div></article>
+                    <article class="kpi-card"><div class="kpi-label"><span class="kpi-icon"><i class="fa-solid fa-chart-line"></i></span>Proyección de cierre</div><div class="kpi-value" id="kpi-proyeccion-cierre">$0.00</div><div class="kpi-note">Flujo de caja más saldo por cobrar</div></article>
                     <article class="kpi-card"><div class="kpi-label"><span class="kpi-icon"><i class="fa-solid fa-chart-pie"></i></span>Avance financiero</div><div class="kpi-value" id="kpi-avance-pct">0,00%</div><div class="kpi-note">Porcentaje cobrado sobre el contrato</div></article>
                 </section>
                 <section class="board-card" id="tablero" aria-label="Tablero de proyectos">
@@ -568,7 +569,7 @@ def generar_dashboard():
         let mostrarProyectoSeleccionado = false;
 
         function formatearUSD(valor) {{
-            return new Intl.NumberFormat('en-US', {{ style: 'currency', currency: 'USD', minimumFractionDigits: 2 }}).format(valor);
+            return new Intl.NumberFormat('en-US', {{ style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }}).format(valor);
         }}
 
         function claseMonto(valor) {{
@@ -757,6 +758,9 @@ def generar_dashboard():
             document.getElementById('kpi-cobrado').textContent = formatearUSD(indicadores.cobrado_desembolsado ?? indicadores.desembolsado);
             document.getElementById('kpi-flujo-caja').textContent = formatearUSD(indicadores.flujo_caja ?? indicadores.flujo);
             document.getElementById('kpi-por-cobrar').textContent = formatearUSD(indicadores.por_cobrar ?? indicadores.porCobrar);
+            const flujoCaja = Number(indicadores.flujo_caja ?? indicadores.flujo) || 0;
+            const porCobrar = Number(indicadores.por_cobrar ?? indicadores.porCobrar) || 0;
+            document.getElementById('kpi-proyeccion-cierre').textContent = formatearUSD(flujoCaja + porCobrar);
             document.getElementById('kpi-avance-pct').textContent = `${{avanceFinanciero.toFixed(2)}}%`;
 
             const obrasCulminadas = datosObraSeleccionada

@@ -3,11 +3,12 @@
 # usa la copia guardada en Datos.
 # Dashboard publicado: https://Alexander71133.github.io/inversora-macroandes/
 
-# Commit #
+# Commit Local #
 python src/generar_html.py
 
 # La vista local queda actualizada en index.html; revísala antes de publicar.
-# Push #
+
+# Push en la nube #
 git status --short
 git add Actualizacion index.html output/dashboard_obras.html reporte_obras.html documentos/obras
 git diff --cached --stat

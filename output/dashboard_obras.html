@@ -146,7 +146,7 @@
             </header>
             <main class="content" id="resumen">
                 <section class="page-heading">
-                    <div><p class="eyebrow">Inversora Macroandes · Seguimiento financiero</p><h1>Control de obras</h1><p class="subtitle">(Actualización 18/11/2026 16:04)</p></div>
+                    <div><p class="eyebrow">Inversora Macroandes · Seguimiento financiero</p><h1>Control de obras</h1><p class="subtitle">(Actualización 18/11/2026 16:27)</p></div>
                     <a class="report-button" id="generate-report" href="../reporte_obras.html" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Generar reporte PDF</a>
                 </section>
                 <section class="kpi-grid" aria-label="Indicadores financieros de los proyectos filtrados">
@@ -159,7 +159,7 @@
                     <article class="kpi-card"><div class="kpi-label"><span class="kpi-icon"><i class="fa-solid fa-chart-pie"></i></span>Avance financiero</div><div class="kpi-value" id="kpi-avance-pct">0,00%</div><div class="kpi-note">Porcentaje cobrado sobre el contrato</div></article>
                 </section>
                 <section class="board-card" id="tablero" aria-label="Tablero de proyectos">
-                    <div class="board-head"><div><h2 class="board-title">Proyectos <span class="board-count" id="project-count">0</span></h2><p class="board-description">Selecciona una fila para consultar sus indicadores financieros.</p></div></div>
+                    <div class="board-head"><div><h2 class="board-title">Proyectos <span class="board-count" id="project-count">0</span></h2><p class="board-description" id="project-selection-description">Haz clic en las filas para agregar o quitar obras de la selección.</p></div></div>
                     <div class="board-controls">
                         <div class="view-tabs" role="tablist" aria-label="Filtrar proyectos">
                             <button class="view-tab active" type="button" data-view="TODAS">Todas las obras</button>
@@ -232,8 +232,7 @@
         const estadoTransacciones = { vista: 'TODAS' };
         const dialogArchivos = document.getElementById('files-dialog');
         const rutaBaseArchivos = "../";
-        let proyectoSeleccionado = null;
-        let mostrarProyectoSeleccionado = false;
+        const proyectosSeleccionados = new Set();
 
         function formatearUSD(valor) {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(valor);
@@ -384,13 +383,6 @@
             dialogArchivos.showModal();
         }
 
-        function obtenerEtiquetaObra(obra, data) {
-            if (data && data.estado === 'CULMINADA') {
-                return `${obra} - CULMINADA ${formatearFecha(data.fecha_cierre)}`;
-            }
-            return obra;
-        }
-
         function renderizarTablero() {
             const consulta = busquedaObras.value.trim().toLocaleLowerCase('es');
             const proyectos = Object.entries(datosProyectos).filter(([obra, data]) => {
@@ -400,52 +392,45 @@
                 const coincideBusqueda = !consulta || textoProyecto.includes(consulta);
                 return coincideVista && coincideBusqueda;
             });
-            if (!proyectos.some(([obra]) => obra === proyectoSeleccionado)) {
-                proyectoSeleccionado = proyectos[0]?.[0] || null;
-            }
+            const obrasSeleccionadas = proyectos.filter(([obra]) => proyectosSeleccionados.has(obra));
+            const proyectosIndicadores = obrasSeleccionadas.length ? obrasSeleccionadas : proyectos;
 
-            const totales = proyectos.reduce((sum, [, data]) => ({
+            const totales = proyectosIndicadores.reduce((sum, [, data]) => ({
                 monto: sum.monto + (Number(data.monto_contrato) || 0),
                 ejecutado: sum.ejecutado + (Number(data.estimado_ejecutado) || 0),
                 desembolsado: sum.desembolsado + (Number(data.cobrado_desembolsado) || 0),
                 flujo: sum.flujo + (Number(data.flujo_caja) || 0),
                 porCobrar: sum.porCobrar + (Number(data.por_cobrar) || 0),
             }), { monto: 0, ejecutado: 0, desembolsado: 0, flujo: 0, porCobrar: 0 });
-            const datosObraSeleccionada = mostrarProyectoSeleccionado
-                ? proyectos.find(([obra]) => obra === proyectoSeleccionado)?.[1]
-                : null;
-            const indicadores = datosObraSeleccionada || totales;
-            const avanceFinanciero = datosObraSeleccionada
-                ? Number(datosObraSeleccionada.avance_financiero_pct) || 0
-                : totales.monto > 0
-                    ? (totales.desembolsado / totales.monto) * 100
+            const avanceFinanciero = totales.monto > 0
+                ? (totales.desembolsado / totales.monto) * 100
                 : 0;
-            document.getElementById('kpi-monto').textContent = formatearUSD(indicadores.monto_contrato ?? indicadores.monto);
-            document.getElementById('kpi-estimado').textContent = formatearUSD(indicadores.estimado_ejecutado ?? indicadores.ejecutado);
-            document.getElementById('kpi-cobrado').textContent = formatearUSD(indicadores.cobrado_desembolsado ?? indicadores.desembolsado);
-            document.getElementById('kpi-flujo-caja').textContent = formatearUSD(indicadores.flujo_caja ?? indicadores.flujo);
-            document.getElementById('kpi-por-cobrar').textContent = formatearUSD(indicadores.por_cobrar ?? indicadores.porCobrar);
-            const flujoCaja = Number(indicadores.flujo_caja ?? indicadores.flujo) || 0;
-            const porCobrar = Number(indicadores.por_cobrar ?? indicadores.porCobrar) || 0;
-            document.getElementById('kpi-proyeccion-cierre').textContent = formatearUSD(flujoCaja + porCobrar);
+            document.getElementById('kpi-monto').textContent = formatearUSD(totales.monto);
+            document.getElementById('kpi-estimado').textContent = formatearUSD(totales.ejecutado);
+            document.getElementById('kpi-cobrado').textContent = formatearUSD(totales.desembolsado);
+            document.getElementById('kpi-flujo-caja').textContent = formatearUSD(totales.flujo);
+            document.getElementById('kpi-por-cobrar').textContent = formatearUSD(totales.porCobrar);
+            document.getElementById('kpi-proyeccion-cierre').textContent = formatearUSD(totales.flujo + totales.porCobrar);
             document.getElementById('kpi-avance-pct').textContent = `${avanceFinanciero.toFixed(2)}%`;
 
-            const obrasCulminadas = datosObraSeleccionada
-                ? datosObraSeleccionada.estado === 'CULMINADA'
-                : proyectos.length > 0 && proyectos.every(([, data]) => data.estado === 'CULMINADA');
+            const obrasCulminadas = proyectosIndicadores.length > 0
+                && proyectosIndicadores.every(([, data]) => data.estado === 'CULMINADA');
             document.querySelectorAll('.kpi-card').forEach((card) => {
                 card.classList.toggle('obra-culminada', obrasCulminadas);
             });
             const badge = document.getElementById('badge-obra-estado');
             badge.classList.toggle('visible', obrasCulminadas);
-            badge.textContent = datosObraSeleccionada ? 'OBRA CULMINADA' : 'OBRAS CULMINADAS';
+            badge.textContent = proyectosIndicadores.length === 1 ? 'OBRA CULMINADA' : 'OBRAS CULMINADAS';
+            document.getElementById('project-selection-description').textContent = obrasSeleccionadas.length
+                ? `${obrasSeleccionadas.length} ${obrasSeleccionadas.length === 1 ? 'obra seleccionada' : 'obras seleccionadas'}; las tarjetas muestran su consolidado.`
+                : 'Sin obras seleccionadas en esta vista: las tarjetas muestran todas las obras visibles. Haz clic en las filas para agregar o quitar obras.';
 
             document.getElementById('project-count').textContent = proyectos.length;
             filasObras.innerHTML = proyectos.map(([obra, data]) => {
                 const avance = Math.max(0, Math.min(100, Number(data.avance_financiero_pct) || 0));
                 const avanceFisico = Math.max(0, Math.min(100, Number(data.avance_fisico_pct) || 0));
                 const culminada = data.estado === 'CULMINADA';
-                const selected = proyectoSeleccionado === obra;
+                const selected = proyectosSeleccionados.has(obra);
                 const detalle = culminada && data.fecha_cierre
                     ? `Culminada el ${formatearFecha(data.fecha_cierre)}`
                     : 'Proyecto de inversión';
@@ -478,10 +463,16 @@
                 });
             });
 
-            const dataSeleccionada = datosProyectos[proyectoSeleccionado];
-            if (dataSeleccionada) {
-                document.getElementById('chart-project-name').textContent = obtenerEtiquetaObra(proyectoSeleccionado, dataSeleccionada);
-                renderizarWaterfall(dataSeleccionada.cobrado_desembolsado, dataSeleccionada.egresos_reales, dataSeleccionada.flujo_caja);
+            if (proyectosIndicadores.length) {
+                const datosGrafico = proyectosIndicadores.reduce((sum, [, data]) => ({
+                    desembolsado: sum.desembolsado + (Number(data.cobrado_desembolsado) || 0),
+                    ejecutado: sum.ejecutado + (Number(data.egresos_reales) || 0),
+                    flujo: sum.flujo + (Number(data.flujo_caja) || 0),
+                }), { desembolsado: 0, ejecutado: 0, flujo: 0 });
+                document.getElementById('chart-project-name').textContent = obrasSeleccionadas.length
+                    ? `${obrasSeleccionadas.length} ${obrasSeleccionadas.length === 1 ? 'obra seleccionada' : 'obras seleccionadas'}`
+                    : `Consolidado de ${proyectosIndicadores.length} ${proyectosIndicadores.length === 1 ? 'obra visible' : 'obras visibles'}`;
+                renderizarWaterfall(datosGrafico.desembolsado, datosGrafico.ejecutado, datosGrafico.flujo);
             } else {
                 document.getElementById('chart-project-name').textContent = 'No hay proyectos en esta vista';
                 Plotly.purge('waterfallChart');
@@ -490,8 +481,11 @@
 
         function actualizarDashboard(obra) {
             if (!datosProyectos[obra] || obra === 'CONSOLIDADO OBRAS') return;
-            proyectoSeleccionado = obra;
-            mostrarProyectoSeleccionado = true;
+            if (proyectosSeleccionados.has(obra)) {
+                proyectosSeleccionados.delete(obra);
+            } else {
+                proyectosSeleccionados.add(obra);
+            }
             renderizarTablero();
         }
 
@@ -529,15 +523,11 @@
             document.querySelectorAll('[data-view]').forEach((boton) => {
                 boton.addEventListener('click', () => {
                     estadoSelector.vista = boton.dataset.view;
-                    mostrarProyectoSeleccionado = false;
                     document.querySelectorAll('[data-view]').forEach((tab) => tab.classList.toggle('active', tab === boton));
                     renderizarTablero();
                 });
             });
-            busquedaObras.addEventListener('input', () => {
-                mostrarProyectoSeleccionado = false;
-                renderizarTablero();
-            });
+            busquedaObras.addEventListener('input', renderizarTablero);
             busquedaTransacciones.addEventListener('input', renderizarTransacciones);
             document.querySelectorAll('[data-transaction-view]').forEach((boton) => {
                 boton.addEventListener('click', () => {
